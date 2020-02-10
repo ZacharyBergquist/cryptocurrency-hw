@@ -1,11 +1,12 @@
 import hashlib
 import json
+from collections import OrderedDict
 from fastecdsa import ecdsa, keys, curve, point
 
 class ScroogeCoin(object):
     def __init__(self):
         self.private_key, self.public_key =  self.KeyGen() # MUST USE secp256k1 curve from fastecdsa
-        self.address =  self.hash([bytes(bin(self.public_key.x)[2:],'utf-8'),
+        self.address =  self.get_addr([bytes(bin(self.public_key.x)[2:],'utf-8'),
                         bytes(bin(self.public_key.y)[2:],'utf-8')]) # create the address using public key, and bitwise operation, may need hex(value).hexdigest()
         self.chain = [] # list of all the blocks
         self.current_transactions = [] # list of all the current transactions creating a block, the scrooge will keep up with the transactions
@@ -26,40 +27,45 @@ class ScroogeCoin(object):
             "locations": {"block": -1, "tx": -1, "amount":-1},
             "receivers" : receivers,
         }
-        tx["hash"] = {}# hash of tx
-        tx["signature"] = self.sign(self.address) # signed hash of tx
+        tx["hash"] = self.hash(OrderedDict(tx))# hash of tx, sends an ordered dictionary to has funciton
+        tx["signature"] = self.sign(tx["hash"]) # signed hash of tx
 
 
         self.current_transactions.append(tx)
-        
-        print(self.address)
-        print(tx['signature'])
-        # print(receivers)
-        # print("---------------------------------------------")
+
+        print(tx)
 
 
     def hash(self, blob):
         """
         Creates a SHA-256 hash of a Block
+        iterates through dictionary and concatenates together to create hash
         :param block: Block
         """
-        m = hashlib.sha256()
+        h = hashlib.sha256()
         for i in blob:
-            m.update(i)
-        addr = m.hexdigest()    #add x and y to hash and concatenate
-        
+            h.update(json.dumps(blob[i]).encode())
 
         # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
         # use json.dumps().encode() and specify the corrent parameters
         # use hashlib to hash the output of json.dumps()
+        return h.hexdigest()
+    def get_addr(self, pub):
+
+        m = hashlib.sha256()
+        for i in pub:
+            m.update(i)
+        addr = m.hexdigest()    #add x and y to hash and concatenate
+
         return addr
+        
+
 
     def sign(self, hash_):
         return ecdsa.sign(msg=hash_, 
         d=self.private_key,
         curve=curve.secp256k1,
-        hashfunc=hashlib.sha256
-        )# use fastecdsa library
+        hashfunc=hashlib.sha256)# use fastecdsa library
 
     def add_tx(self, tx, public_key):
          """
