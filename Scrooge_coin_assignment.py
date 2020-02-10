@@ -147,7 +147,6 @@ def main():
     users = [User() for i in range(10)]
     Scrooge.create_coins({users[0].address:10, users[1].address:20, users[3].address:50})
 
-    
 
 if __name__ == '__main__':
    main()
