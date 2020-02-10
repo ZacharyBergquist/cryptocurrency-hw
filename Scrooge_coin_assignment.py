@@ -5,7 +5,8 @@ from fastecdsa import ecdsa, keys, curve, point
 class ScroogeCoin(object):
     def __init__(self):
         self.private_key, self.public_key =  self.KeyGen() # MUST USE secp256k1 curve from fastecdsa
-        self.address =  self.hash(self.public_key) # create the address using public key, and bitwise operation, may need hex(value).hexdigest()
+        self.address =  self.hash([bytes(bin(self.public_key.x)[2:],'utf-8'),
+                        bytes(bin(self.public_key.y)[2:],'utf-8')]) # create the address using public key, and bitwise operation, may need hex(value).hexdigest()
         self.chain = [] # list of all the blocks
         self.current_transactions = [] # list of all the current transactions creating a block, the scrooge will keep up with the transactions
 
@@ -18,21 +19,23 @@ class ScroogeCoin(object):
         Scrooge adds value to some coins
         :param receivers: {account:amount, account:amount, ...}
         """
-        """
+        
         tx = {
-            "sender" :# address,
+            "sender" :self.address, # address,
             # coins that are created do not come from anywhere
             "locations": {"block": -1, "tx": -1, "amount":-1},
             "receivers" : receivers,
         }
-        tx["hash"] = {} # hash of tx
-        tx["signature"] = {} # signed hash of tx
+        tx["hash"] = {}# hash of tx
+        tx["signature"] = self.sign(self.address) # signed hash of tx
 
 
         self.current_transactions.append(tx)
-        """
-        print(receivers)
-        print("---------------------------------------------")
+        
+        print(self.address)
+        print(tx['signature'])
+        # print(receivers)
+        # print("---------------------------------------------")
 
 
     def hash(self, blob):
@@ -40,12 +43,9 @@ class ScroogeCoin(object):
         Creates a SHA-256 hash of a Block
         :param block: Block
         """
-
         m = hashlib.sha256()
-        x = bytes(bin(blob.x)[2:],'utf-8')  # convert x elliptical curve into bitwise object
-        y = bytes(bin(blob.y)[2:],'utf-8')  # convert y elliptical curve into bitwise object
-        m.update(x)
-        m.update(y)
+        for i in blob:
+            m.update(i)
         addr = m.hexdigest()    #add x and y to hash and concatenate
         
 
@@ -55,7 +55,11 @@ class ScroogeCoin(object):
         return addr
 
     def sign(self, hash_):
-        return # use fastecdsa library
+        return ecdsa.sign(msg=hash_, 
+        d=self.private_key,
+        curve=curve.secp256k1,
+        hashfunc=hashlib.sha256
+        )# use fastecdsa library
 
     def add_tx(self, tx, public_key):
          """
