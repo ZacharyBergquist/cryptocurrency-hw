@@ -4,12 +4,11 @@ from fastecdsa import ecdsa, keys, curve, point
 
 class ScroogeCoin(object):
     def __init__(self):
-        self.private_key, self.public_key = keys.gen_keypair(curve.secp256k1)# MUST USE secp256k1 curve from fastecdsa
-        self.address = hash(self.public_key)# create the address using public key, and bitwise operation, may need hex(value).hexdigest()
+        self.private_key, self.public_key = keys.gen_keypair(curve.secp256k1) # MUST USE secp256k1 curve from fastecdsa
+        self.address =  self.hash(self.public_key)# create the address using public key, and bitwise operation, may need hex(value).hexdigest()
         self.chain = [] # list of all the blocks
         self.current_transactions = [] # list of all the current transactions creating a block, the scrooge will keep up with the transactions
 
-#Zach is the master of my python 
 
     def create_coins(self, receivers: dict):
         """
@@ -35,14 +34,18 @@ class ScroogeCoin(object):
         Creates a SHA-256 hash of a Block
         :param block: Block
         """
-        sha = hashlib.sha256()
-        sha.update(blob)
-        final = sha.hexdigest()
-        #print(final)
+        m = hashlib.sha256()
+        x = bytes(bin(blob.x)[2:],'utf-8')
+        y = bytes(bin(blob.y)[2:],'utf-8')
+        m.update(x)
+        m.update(y)
+        addr = m.digest()
+        
+
         # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
         # use json.dumps().encode() and specify the corrent parameters
         # use hashlib to hash the output of json.dumps()
-        return # hash_of_blob
+        return addr
 
     def sign(self, hash_):
         return # use fastecdsa library
@@ -61,7 +64,6 @@ class ScroogeCoin(object):
         }
 
         :param public_key: User.public_key
-
         :return: True if the tx is added to current_transactions
         """
 
@@ -124,8 +126,8 @@ def main():
 
     # Example of how the code will be run
     Scrooge = ScroogeCoin()
-    users = [User() for i in range(10)]
-    Scrooge.create_coins({users[0].address:10, users[1].address:20, users[3].address:50})
+    #users = [User() for i in range(10)]
+    #Scrooge.create_coins({users[0].address:10, users[1].address:20, users[3].address:50})
 
     
 
