@@ -9,7 +9,7 @@ class ScroogeCoin(object):
         self.chain = [] # list of all the blocks
         self.current_transactions = [] # list of all the current transactions creating a block, the scrooge will keep up with the transactions
 
-     
+#Zach is the master of my python 
 
     def create_coins(self, receivers: dict):
         """
