@@ -5,7 +5,7 @@ from fastecdsa import ecdsa, keys, curve, point
 
 class ScroogeCoin(object):
     def __init__(self):
-        self.private_key, self.public_key =  self.KeyGen() # MUST USE secp256k1 curve from fastecdsa
+        self.private_key, self.public_key = self.KeyGen() # MUST USE secp256k1 curve from fastecdsa
         self.address =  self.get_addr([bytes(bin(self.public_key.x)[2:],'utf-8'),
                         bytes(bin(self.public_key.y)[2:],'utf-8')]) # create the address using public key, and bitwise operation, may need hex(value).hexdigest()
         self.chain = [] # list of all the blocks
@@ -70,9 +70,10 @@ class ScroogeCoin(object):
         hashfunc=hashlib.sha256)# use fastecdsa library
 
     def add_tx(self, tx, public_key):
-         """
+        """
         checks that tx is valid
         adds tx to current_transactions
+        
 
         :param tx = {
             "sender" : User.address,
@@ -82,9 +83,12 @@ class ScroogeCoin(object):
             "receivers" : {account:amount, account:amount, ...}
         }
 
+
+        
         :param public_key: User.public_key
         :return: True if the tx is added to current_transactions
         """
+        self.chain.append(tx)
 
 
 class User(object):
