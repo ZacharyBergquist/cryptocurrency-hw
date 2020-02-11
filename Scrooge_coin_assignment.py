@@ -3,6 +3,7 @@ import json
 from collections import OrderedDict
 from fastecdsa import ecdsa, keys, curve, point
 
+
 class ScroogeCoin(object):
     def __init__(self):
         self.private_key, self.public_key =  self.KeyGen() # MUST USE secp256k1 curve from fastecdsa
@@ -24,10 +25,11 @@ class ScroogeCoin(object):
         tx = {
             "sender" :self.address, # address,
             # coins that are created do not come from anywhere
+            #TODO: the value for block, tx, and amount should correspond to the transaction number?
             "locations": {"block": -1, "tx": -1, "amount":-1},
             "receivers" : receivers,
         }
-        tx["hash"] = self.hash(OrderedDict(tx))# hash of tx, sends an ordered dictionary to has funciton
+        tx["hash"] = self.hash(tx)# hash of tx, sends an ordered dictionary to has funciton
         tx["signature"] = self.sign(tx["hash"]) # signed hash of tx
 
 
@@ -43,13 +45,14 @@ class ScroogeCoin(object):
         :param block: Block
         """
         h = hashlib.sha256()
-        for i in blob:
-            h.update(json.dumps(blob[i]).encode())
+        h.update(json.dumps(blob, sort_keys=True).encode())
 
         # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
         # use json.dumps().encode() and specify the corrent parameters
         # use hashlib to hash the output of json.dumps()
         return h.hexdigest()
+
+
     def get_addr(self, pub):
 
         m = hashlib.sha256()
@@ -99,21 +102,19 @@ class User(object):
         :param block: Block
         :return: the hash of the blob
         """
-
-        m = hashlib.sha256()
-        x = bytes(bin(blob.x)[2:],'utf-8')  # convert x elliptical curve into bitwise object
-        y = bytes(bin(blob.y)[2:],'utf-8')  # convert y elliptical curve into bitwise object
-        m.update(x)
-        m.update(y)
-        addr = m.hexdigest()    #add x and y to hash and concatenate
+        h = hashlib.sha256()
+        h.update(json.dumps(blob, sort_keys=True).encode())
 
         # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
         # use json.dumps().encode() and specify the corrent parameters
         # use hashlib to hash the output of json.dumps()
-        return addr    # hash_of_blob
+        return h.hexdigest()   # hash_of_blob
 
     def sign(self, hash_):
-        return # use fastecdsa library
+        return ecdsa.sign(msg=hash_, 
+        d=self.private_key,
+        curve=curve.secp256k1,
+        hashfunc=hashlib.sha256)# use fastecdsa library
 
     def send_tx(self, receivers, previous_tx_locations):
         """
@@ -121,19 +122,18 @@ class User(object):
         :param receivers: {account:amount, account:amount, ...}
         :param previous_tx_locations 
         """
-        """
 
         tx = {
-                "sender" : # address,
+                "sender" : self.address# address,
                 "locations" : previous_tx_locations,
                 "receivers" : receivers 
             }
 
-        tx["hash"] = # hash of TX
+        tx["hash"] = self.hash(tx)# hash of TX
         tx["signature"] = # signed hash of TX
 
         return tx
-        """
+     
 
 
 
