@@ -1,6 +1,5 @@
 import hashlib
 import json
-from collections import OrderedDict
 from fastecdsa import ecdsa, keys, curve, point
 
 
