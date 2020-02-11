@@ -85,6 +85,7 @@ class ScroogeCoin(object):
         :param public_key: User.public_key
         :return: True if the tx is added to current_transactions
         """
+        self.current_transactions.append(tx)
 
 
 class User(object):
@@ -123,7 +124,7 @@ class User(object):
         """
 
         tx = {
-                "sender" : self.address# address,
+                "sender" : self.address # address,
                 "locations" : previous_tx_locations,
                 "receivers" : receivers 
             }
