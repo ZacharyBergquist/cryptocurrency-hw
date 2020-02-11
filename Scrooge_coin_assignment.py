@@ -130,7 +130,7 @@ class User(object):
             }
 
         tx["hash"] = self.hash(tx)# hash of TX
-        tx["signature"] = # signed hash of TX
+        tx["signature"] = self.sign(tx["hash"])# signed hash of TX
 
         return tx
      
