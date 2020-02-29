@@ -94,8 +94,8 @@ class ScroogeCoin(object):
 class User(object):
     def __init__(self):
         self.private_key, self.public_key = self.KeyGen()# MUST USE secp256k1 curve from fastecdsa
-        self.address = self.hash(self.public_key)# create the address using public key, and bitwise operation, may need hex(value).hexdigest()
-
+        self.address = self.get_addr([bytes(bin(self.public_key.x)[2:],'utf-8'),
+                        bytes(bin(self.public_key.y)[2:],'utf-8')])
     def KeyGen(self):
         return keys.gen_keypair(curve.secp256k1)
 
@@ -113,6 +113,15 @@ class User(object):
         # use hashlib to hash the output of json.dumps()
         return h.hexdigest()   # hash_of_blob
 
+    def get_addr(self, pub):
+
+        m = hashlib.sha256()
+        for i in pub:
+            m.update(i)
+        addr = m.hexdigest()    #add x and y to hash and concatenate
+
+        return addr
+
     def sign(self, hash_):
         return ecdsa.sign(msg=hash_, 
         d=self.private_key,
@@ -127,7 +136,7 @@ class User(object):
         """
 
         tx = {
-                "sender" : self.address # address,
+                "sender" : self.address,  # address,
                 "locations" : previous_tx_locations,
                 "receivers" : receivers 
             }
