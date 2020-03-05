@@ -2,6 +2,12 @@ import hashlib
 import json
 from fastecdsa import ecdsa, keys, curve, point
 
+"""
+double spend is still wrong
+find balance
+balance calculations wrong
+"""
+
 class ScroogeCoin(object):
 	def __init__(self):
 		self.private_key, self.public_key = self.KeyGen() # MUST USE secp256k1 curve from fastecdsa
@@ -77,7 +83,7 @@ class ScroogeCoin(object):
 			tx_index = 0
 			for old_tx in block["transactions"]:
 				for funded, amount in old_tx["receivers"].items():
-					if(address == funded):
+					if address == funded:
 						funded_transactions.append({"block":block["index"], "tx":tx_index, "amount":amount})
 				tx_index += 1
 
@@ -107,28 +113,30 @@ class ScroogeCoin(object):
 
 
 		# Check for equal value
-		total_amount = 0
-		consumed_coins = 0
+		balance = 0
+		sent_amt = 0
+		remain_amt = 0
 		# get len of previous trans to index final balance
 		num_trans = len(tx['locations'])
 		for usr, amount in tx['receivers'].items():
 			# Check for consumed coins amount
 			if usr == tx['sender']:
-				pass
+				remain_amt = amount
 			else:
-				consumed_coins = amount
+				sent_amt = amount
 			if amount > 0 :
-				total_amount += amount
+				balance+= amount
 
-		if total_amount == tx['locations'][num_trans-1]['amount']:
+		print('Balance :', balance)
+		print('last_location :', tx['locations'][num_trans-1]['amount'])
+		#print('consumed coins : ', consumed_coins)
+
+		if balance == remain_amt+sent_amt:
 			is_all_spent=True
 		# Check if consumed coins are valid
+
 		# Check current balance
-		if num_trans > 0:
-			bal = tx['locations'][num_trans-1]['amount']
-		else:
-			bal = 0
-		if bal >= consumed_coins:
+		if balance >= 0:
 			is_funded = True
 
 
@@ -157,16 +165,16 @@ class ScroogeCoin(object):
 			                    public_key,curve=curve.secp256k1,
 			                    hashfunc=hashlib.sha256)
 
-		# print the errors
+		# # print the errors
 		if is_signed is not True:
 			print('Invalid signature!!!')
-		if is_correct_hash  is not True:
+		elif is_correct_hash  is not True:
 			print("The hash is not valid!!")
-		if is_funded is not True:
+		elif is_funded is not True:
 			print('No balance!!!')
-		if is_all_spent is not True:
+		elif is_all_spent is not True:
 			print('Not all coins are spent!!!')
-		if consumed_previous is True:
+		elif consumed_previous is True:
 			print('Invalid double spend!!!')
 
 		if (is_correct_hash and is_signed and is_funded and is_all_spent and not consumed_previous):
@@ -233,6 +241,8 @@ class ScroogeCoin(object):
 		prints balance of address
 		:param address: User.address
 		"""
+		print(address)
+
 
 	def show_block(self, block_num):
 		"""
@@ -240,7 +250,14 @@ class ScroogeCoin(object):
 		:param block_num: index of the block to be printed
 		"""
 		b = self.chain[block_num]
-		formatted_block = str("Index: %s\n\nHash: %s\n\nPrev_hash: %s\n\nTransactions: %s\n\nSignatue: %s\n\n")%(b["index"], b["hash"], b["previous_hash"], b["transactions"], b["signature"])
+		formatted_block = str("Index: %s\n\nHash:"+
+			                  " %s\n\nPrevious hash:"+
+			                  " %s\n\nTransactions:"+
+			                  " %s\n\nSignature: %s\n\n")%(
+			                  b["index"], b["hash"],
+			                   b["previous_hash"], 
+			                   b["transactions"], 
+			                   b["signature"])
 		print(formatted_block)
 
 class User(object):
@@ -325,12 +342,35 @@ def main():
 	first_tx = users[0].send_tx({users[1].address: 2, users[0].address:8}, user_0_tx_locations)
 	Scrooge.add_tx(first_tx, users[0].public_key)
 	Scrooge.mine()
+	# print(Scrooge.get_user_tx_positions(users[1].address))
 
-	# second_tx = users[1].send_tx({users[0].address:20}, Scrooge.get_user_tx_positions(users[1].address))
-	# Scrooge.add_tx(second_tx, users[1].public_key)
+	second_tx = users[1].send_tx({users[0].address:20, users[1].address:2}, Scrooge.get_user_tx_positions(users[1].address))
+	user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
+	#second_tx = users[0].send_tx({users[1].address: 2, users[0].address:6}, user_0_tx_locations)
+	Scrooge.add_tx(second_tx, users[1].public_key)
+	Scrooge.mine()
+	print(Scrooge.get_user_tx_positions(users[1].address))
+
+	user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
+	third_tx = users[0].send_tx({users[1].address: 2, users[0].address:4}, user_0_tx_locations)
+	Scrooge.add_tx(third_tx, users[0].public_key)
+	Scrooge.mine()
+	usr_1_tx_locations = Scrooge.get_user_tx_positions(users[1].address)
+	# print(usr_1_tx_locations)
+	# print(user_0_tx_locations)
+
+
+	# Scrooge.create_coins({users[0].address:10, users[1].address:20, users[3].address:50})
 	# Scrooge.mine()
 
-	Scrooge.show_block(1)
+
+	# Scrooge.show_block(0)
+	# Scrooge.show_block(1)
+	# Scrooge.show_block(2)
+	# Scrooge.show_block(3)
+	# Scrooge.show_block(4)
+
+	#Scrooge.show_user_balance(users[0].address)
 
 	#Scrooge.get_user_tx_positions(users[1].address)
 	#Scrooge.get_user_tx_positions(users[0].address)
