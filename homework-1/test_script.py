@@ -1,17 +1,8 @@
 import hashlib
 import json
+from time import sleep
 from fastecdsa import ecdsa, keys, curve, point
 
-
-# create mock tx
-address = 'usr_0'
-tx = {
-	"sender" : "usr_0",
-	"locations" : [{"block":0, "tx":0, "amount":10},{"block":1, "tx":3, "amount":11}],
-	"receivers" : {"usr_1":3,"usr_0":8},
-}
-tx["hash"] = "itsasecret"
-tx["signature"] = "Zachy B"
 
 #create mock get_usr_trans
 
@@ -58,9 +49,55 @@ for usr,amount in tx['receivers'].items():
 		consumed_coins = amount
 	print(consumed_coins)
 """
-build_hash = ['sender', 'locations', 'receivers']
-print(tx['hash'])
-test_tx = {}
-for item in build_hash:
-	test_tx[item] = tx[item]
-print(test_tx)
+def get_addr(pub):
+
+		m = hashlib.sha256()
+		for i in pub:
+			m.update(i)
+		addr = m.hexdigest()    #add x and y to hash and concatenate
+
+		return addr
+
+def test_valid(tx):
+
+	if tx['sender'] == 'usr_0' and tx['hash'] == 'itsasecret':
+		return tx
+def sign(private_key, hash_):
+		return ecdsa.sign(msg=hash_, 
+		d=private_key,
+		curve=curve.secp256k1,
+		hashfunc=hashlib.sha256)
+
+
+if __name__ == '__main__':
+
+	# create mock tx
+	"""
+	public_key = {"X": 0xdc6de65763431bfe1b9a6fe03622b125fb5ccab08a883a076c2590150bdd8fe4,"Y": 0xfc38ff4f5b5b217b6a5d68e8ad526ec08cc79b10fb9c8dbbf2c0850a72e6b9c2}
+	test_key = get_addr([bytes(bin(public_key['X'])[2:],'utf-8'),bytes(bin(public_key['Y'])[2:],'utf-8')])
+	tx = {
+		"sender" : "f42d934470c3ed83844968e92f59fc26d41353a9a5e35f7bc2d61228e74f95f5",
+		"locations" : [{"block":0, "tx":0, "amount":10},{"block":1, "tx":3, "amount":11}],
+		"receivers" : {"usr_1":3,"usr_0":8},
+	}
+	tx["hash"] = "itsasecret"
+	tx["signature"] = "Zachy B"
+
+	check = test_valid(tx)
+	if test_key != tx['sender']:
+		print('Consumed True')
+	else:
+		print('Consumed False')
+	"""
+	test_hash = '507363fe1a5d39545ef4a69ebeacbe6498fc789f0e09ac659768a3fae17ec50e'
+	(priv, pub) = keys.gen_keypair(curve.secp256k1)
+	print(priv)
+	print(pub)
+
+
+	test_1 = sign(priv,test_hash)
+	sleep(1)
+	test_2 = sign(priv, test_hash)
+	print(test_1, '\n', test_2)
+
+

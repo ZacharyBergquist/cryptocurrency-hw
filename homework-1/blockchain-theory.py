@@ -42,7 +42,7 @@ class Block():
 
 
 class Blockchain():
-	difficulty = 5
+	difficulty = 0
 
 
 	def __init__(self, chain = []):
@@ -80,7 +80,7 @@ def main():
 	for data in database:
 		num += 1
 		blockchain.mine(Block(data,num))
-
+		
 	for block in blockchain.chain:
 		print(block)
 

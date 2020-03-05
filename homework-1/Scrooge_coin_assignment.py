@@ -33,6 +33,7 @@ class ScroogeCoin(object):
 
 
         self.current_transactions.append(tx)
+        print(self.public_key, '\n\n')
 
         print(tx)
 
