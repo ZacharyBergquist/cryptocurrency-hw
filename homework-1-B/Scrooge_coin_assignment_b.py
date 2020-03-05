@@ -9,6 +9,7 @@ class ScroogeCoin(object):
                         bytes(bin(self.public_key.y)[2:],'utf-8')]) # create the address using public key, and bitwise operation, may need hex(value).hexdigest()
         self.chain = [] # list of all the blocks
         self.current_transactions = [] # list of all the current transactions creating a block, the scrooge will keep up with the transactions
+        self.usrs = []
 
 
     def KeyGen(self):
@@ -104,6 +105,58 @@ class ScroogeCoin(object):
         is_all_spent = False
         consumed_previous = False
 
+
+
+        # Check for equal value
+        total_amount = 0
+        consumed_coins = 0
+        # get len of previous trans to index final balance
+        num_trans = len(tx['locations'])
+        for usr, amount in tx['receivers'].items():
+        	# Check for consumed coins amount
+        	if usr == tx['sender']:
+        		pass
+        	else:
+        		consumed_coins = amount
+        	if amount > 0 :
+        		total_amount += amount
+
+        if total_amount == tx['locations'][num_trans-1]['amount']:
+        	is_all_spent=True
+        # Check if consumed coins are valid
+        # Check current balance
+        if num_trans > 0:
+        	bal = tx['locations'][num_trans-1]['amount']
+        else:
+        	bal = 0
+        if bal >= consumed_coins:
+        	is_funded = True
+
+        # Check if user has made transaction on current block 
+        if tx['sender'] is in self.usrs:
+        	consumed_previous = True
+        else:
+        	self.usrs.append(tx['sender'])
+
+        test_hash = ['sender', 'locations', 'receivers']
+        temp_tx = {}
+        for item in test_hash:
+        	temp_tx[item] = tx[item]
+        test_tx = self.hash(test_tx)
+        if test_tx == tx['hash']:
+        	is_correct_hash = True
+        else:
+        	print("The hash is not valid!!")
+        test_sig = self.sign(test_tx)
+        if test_sig == tx['sign']:
+        	is_signed = True
+        else:
+        	print("Invalid Signature!")
+
+
+
+
+
         if (is_correct_hash and is_signed and is_funded and is_all_spent and not consumed_previous):
             return tx
 
@@ -121,6 +174,7 @@ class ScroogeCoin(object):
         # hash and sign the block
         tx["hash"] = # hash of block
         tx["signature"] = # signed hash of block
+        self.usrs = []
 
         return block
 
