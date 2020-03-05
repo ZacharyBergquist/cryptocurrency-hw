@@ -112,21 +112,17 @@ class ScroogeCoin(object):
 
 
 		# Check for equal value
-		balance = 0
+		balance = self.show_user_balance(tx['sender'])
 		sent_amt = 0
 		remain_amt = 0
 		# get len of previous trans to index final balance
-		num_trans = len(tx['locations'])
-		#print(sender)
-		#print(tx['receivers'].items())
 		for usr, amount in tx['receivers'].items():
 			# Check for consumed coins amount
 			if usr == tx['sender']:
 				remain_amt = amount
 			else:
 				sent_amt = amount
-			if amount > 0 :
-				balance+= amount
+
 		# print('Balance :', balance)
 		# print('last_location :', tx['locations'][num_trans-1]['amount'])
 		#print('consumed coins : ', consumed_coins)
@@ -252,19 +248,19 @@ class ScroogeCoin(object):
 		# 		sent_amt = amount
 		# 	if amount > 0 :
 		# 		balance+= amount
-		print('address : ', address, '\n')
+		# print('address : ', address, '\n')
 		tx_index = 0
 		bal_lst = []
 		start_bal = self.chain[0]["transactions"][0]['receivers'][address]
 		bal = start_bal
-		print("start_bal : ", start_bal)
+		# print("start_bal : ", start_bal)
 		for block in self.chain:
 			for old_tx in block["transactions"]:
 				sender = block['transactions'][0]['sender']
 				# Skip first transaction, since its just creating coins
 				if tx_index > 0:
 					for funded, amount in old_tx["receivers"].items():
-						print("funded : ", funded, "amount : ", amount)
+						# print("funded : ", funded, "amount : ", amount)
 						if sender == funded == address:
 							# print("this the new amount")
 							#print("funded : ", funded, "amount : ", amount)
@@ -274,8 +270,8 @@ class ScroogeCoin(object):
 				else:
 					pass
 				tx_index += 1
-		print("The balance is : ", bal)
-		return
+		# print("The balance is : ", bal)
+		return bal
 				#print("index: ", tx_index)	
 		# print(bal_lst)
 		# balance = bal_lst[0]
@@ -398,10 +394,10 @@ def main():
 	Scrooge.mine()
 	# print(Scrooge.get_user_tx_positions(users[1].address))
 
-	second_tx = users[1].send_tx({users[0].address:20, users[1].address:2}, Scrooge.get_user_tx_positions(users[1].address))
+	#second_tx = users[1].send_tx({users[0].address:20, users[1].address:2}, Scrooge.get_user_tx_positions(users[1].address))
 	user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
-	#second_tx = users[0].send_tx({users[1].address: 2, users[0].address:6}, user_0_tx_locations)
-	Scrooge.add_tx(second_tx, users[1].public_key)
+	second_tx = users[0].send_tx({users[1].address: 2, users[0].address:6}, user_0_tx_locations)
+	Scrooge.add_tx(second_tx, users[0].public_key)
 	Scrooge.mine()
 	#print(Scrooge.get_user_tx_positions(users[1].address))
 
@@ -412,21 +408,20 @@ def main():
 	usr_1_tx_locations = Scrooge.get_user_tx_positions(users[1].address)
 	# print(usr_1_tx_locations)
 	# print(user_0_tx_locations)
-	#print(Scrooge.get_user_tx_positions(users[1].address))
-	print(Scrooge.show_user_balance(users[1].address))
-
+	# print(Scrooge.get_user_tx_positions(users[1].address))
+	#Scrooge.show_user_balance(users[1].address)
 
 	# Scrooge.create_coins({users[0].address:10, users[1].address:20, users[3].address:50})
 	# Scrooge.mine()
 
 
-	# Scrooge.show_block(0)
-	# Scrooge.show_block(1)
-	# Scrooge.show_block(2)
-	# Scrooge.show_block(3)
-	# Scrooge.show_block(4)
+	Scrooge.show_block(0)
+	Scrooge.show_block(1)
+	Scrooge.show_block(2)
+	Scrooge.show_block(3)
+	#Scrooge.show_block(4)
 
-	#Scrooge.show_user_balance(users[0].address)
+	print("User[0]'s balance : ", Scrooge.show_user_balance(users[0].address))
 
 	#Scrooge.get_user_tx_positions(users[1].address)
 	#Scrooge.get_user_tx_positions(users[0].address)
