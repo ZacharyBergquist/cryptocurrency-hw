@@ -78,14 +78,13 @@ class ScroogeCoin(object):
 		[{"block":block_num, "tx":tx_num, "amount":amount}, ...]
 		"""
 		funded_transactions = []
-
+		tx_index = 0
 		for block in self.chain:
-			tx_index = 0
 			for old_tx in block["transactions"]:
 				for funded, amount in old_tx["receivers"].items():
 					if address == funded:
 						funded_transactions.append({"block":block["index"], "tx":tx_index, "amount":amount})
-				tx_index += 1
+						tx_index += 1
 
 		return funded_transactions
 
@@ -118,6 +117,8 @@ class ScroogeCoin(object):
 		remain_amt = 0
 		# get len of previous trans to index final balance
 		num_trans = len(tx['locations'])
+		#print(sender)
+		#print(tx['receivers'].items())
 		for usr, amount in tx['receivers'].items():
 			# Check for consumed coins amount
 			if usr == tx['sender']:
@@ -126,9 +127,8 @@ class ScroogeCoin(object):
 				sent_amt = amount
 			if amount > 0 :
 				balance+= amount
-
-		print('Balance :', balance)
-		print('last_location :', tx['locations'][num_trans-1]['amount'])
+		# print('Balance :', balance)
+		# print('last_location :', tx['locations'][num_trans-1]['amount'])
 		#print('consumed coins : ', consumed_coins)
 
 		if balance == remain_amt+sent_amt:
@@ -241,7 +241,61 @@ class ScroogeCoin(object):
 		prints balance of address
 		:param address: User.address
 		"""
-		print(address)
+		# # Check for equal value
+		# sent_amt = 0
+		# remain_amt = 0
+		# for usr, amount in tx['receivers'].items():
+		# 	# Check for consumed coins amount
+		# 	if usr == tx['sender']:
+		# 		remain_amt = amount
+		# 	else:
+		# 		sent_amt = amount
+		# 	if amount > 0 :
+		# 		balance+= amount
+		print('address : ', address, '\n')
+		tx_index = 0
+		bal_lst = []
+		start_bal = self.chain[0]["transactions"][0]['receivers'][address]
+		bal = start_bal
+		print("start_bal : ", start_bal)
+		for block in self.chain:
+			for old_tx in block["transactions"]:
+				sender = block['transactions'][0]['sender']
+				# Skip first transaction, since its just creating coins
+				if tx_index > 0:
+					for funded, amount in old_tx["receivers"].items():
+						print("funded : ", funded, "amount : ", amount)
+						if sender == funded == address:
+							# print("this the new amount")
+							#print("funded : ", funded, "amount : ", amount)
+							bal = amount
+						elif address == funded != sender:
+							bal = bal+amount
+				else:
+					pass
+				tx_index += 1
+		print("The balance is : ", bal)
+		return
+				#print("index: ", tx_index)	
+		# print(bal_lst)
+		# balance = bal_lst[0]
+		# i = 0
+		# while len(bal_lst)>i:
+		# 	print('index : ', i)
+		# 	print(bal_lst[i])
+		# 	print(balance)
+		# 	try:
+		# 		if bal_lst[i-1]>balance:
+		# 			balance = balance - bal_lst[i]
+		# 		else:
+		# 			balance = bal_lst[i]+bal_lst[i-1]
+		# 	except IndexError:
+		# 		if bal_lst[0]>balance:
+		# 			balance = balance - bal_lst[i]
+		# 		else:
+		# 			balance = bal_lst[i]+bal_lst[0]
+		# 	i+=1
+		#print("the balance is : ", balance)
 
 
 	def show_block(self, block_num):
@@ -349,7 +403,7 @@ def main():
 	#second_tx = users[0].send_tx({users[1].address: 2, users[0].address:6}, user_0_tx_locations)
 	Scrooge.add_tx(second_tx, users[1].public_key)
 	Scrooge.mine()
-	print(Scrooge.get_user_tx_positions(users[1].address))
+	#print(Scrooge.get_user_tx_positions(users[1].address))
 
 	user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
 	third_tx = users[0].send_tx({users[1].address: 2, users[0].address:4}, user_0_tx_locations)
@@ -358,6 +412,8 @@ def main():
 	usr_1_tx_locations = Scrooge.get_user_tx_positions(users[1].address)
 	# print(usr_1_tx_locations)
 	# print(user_0_tx_locations)
+	#print(Scrooge.get_user_tx_positions(users[1].address))
+	print(Scrooge.show_user_balance(users[1].address))
 
 
 	# Scrooge.create_coins({users[0].address:10, users[1].address:20, users[3].address:50})
