@@ -1,7 +1,8 @@
 import hashlib
 import json
 from fastecdsa import ecdsa, keys, curve, point
-
+from time import sleep
+import sys
 
 class ScroogeCoin(object):
 	def __init__(self):
@@ -101,13 +102,13 @@ class ScroogeCoin(object):
 		"""
 		is_correct_hash = False
 		is_signed = False
-		is_funded = False
+		is_funded = True
 		is_all_spent = False
 		consumed_previous = False
 
 
 		# Check for equal value
-		balance = self.show_user_balance(tx['sender'], False)     #returns balance without printing
+		balance = self.show_user_balance(tx['sender'], False) #returns balance without printing
 		sent_amt = 0
 		remain_amt = 0
 		# get len of previous trans to index final balance
@@ -144,8 +145,8 @@ class ScroogeCoin(object):
 		# Check if consumed coins are valid
 
 		# Check current balance
-		if balance >= 0:
-			is_funded = True
+		if balance == 0:
+			is_funded = False
 
 
 		test_hash = ['sender', 'locations', 'receivers']
@@ -162,15 +163,15 @@ class ScroogeCoin(object):
 
 		# # print the errors
 		if is_signed is not True:
-			print('Invalid signature!!!')
+			print('Invalid Transaction: Invalid signature!!!')
 		elif is_correct_hash  is not True:
-			print("The hash is not valid!!")
+			print("Invalid Transaction: Invalid hash!!")
 		elif is_funded is not True:
-			print('No balance!!!')
+			print('Invalid Transaction: No balance!!!')
 		elif is_all_spent is not True:
-			print('Not all coins are spent!!!')
+			print('Invalid Transaction: Not all coins are spent!!!')
 		elif consumed_previous is True:
-			print('Invalid double spend!!!')
+			print('Invalid Transaction: Double spend!!!')
 
 		if (is_correct_hash and is_signed and is_funded and is_all_spent and not consumed_previous):
 			return tx
@@ -222,7 +223,7 @@ class ScroogeCoin(object):
 		validate = self.validate_tx(tx,public_key)
 	
 		if validate is None:
-			print('Invalid Transaction')
+			pass
 		else:
 			tx_val = True
 			self.current_transactions.append(validate)
@@ -251,25 +252,29 @@ class ScroogeCoin(object):
 		# print('address : ', address, '\n')
 		tx_index = 0
 		bal_lst = []
-		start_bal = self.chain[0]["transactions"][0]['receivers'][address]
-		bal = start_bal
-		# print("start_bal : ", start_bal)
-		for block in self.chain:
-			for old_tx in block["transactions"]:
-				sender = block['transactions'][0]['sender']
-				# Skip first transaction, since its just creating coins
-				if tx_index > 0:
-					for funded, amount in old_tx["receivers"].items():
-						# print("funded : ", funded, "amount : ", amount)
-						if sender == funded == address:
-							# print("this the new amount")
-							#print("funded : ", funded, "amount : ", amount)
-							bal = amount
-						elif address == funded != sender:
-							bal = bal+amount
-				else:
-					pass
-				tx_index += 1
+		bal =0
+		try:
+			start_bal = self.chain[0]["transactions"][0]['receivers'][address]
+			bal = start_bal
+			# print("start_bal : ", start_bal)
+			for block in self.chain:
+				for old_tx in block["transactions"]:
+					sender = block['transactions'][0]['sender']
+					# Skip first transaction, since its just creating coins
+					if tx_index > 0:
+						for funded, amount in old_tx["receivers"].items():
+							# print("funded : ", funded, "amount : ", amount)
+							if sender == funded == address:
+								# print("this the new amount")
+								#print("funded : ", funded, "amount : ", amount)
+								bal = amount
+							elif address == funded != sender:
+								bal = bal+amount
+					else:
+						pass
+					tx_index += 1
+		except KeyError:
+			pass
 		if p is True:
 			print("%s's balance is : %s"%(address, bal))
 		return bal
@@ -384,28 +389,102 @@ def main():
 	# json - https://docs.python.org/3/library/json.html
 
 	# Example of how the code will be run
+	print("[+] Initializing Script...")
+	sleep(0.5)
 	Scrooge = ScroogeCoin()
 	users = [User() for i in range(10)]
+	print("[+] Users 0-9 are created\n")
+	sleep(.5)
 	Scrooge.create_coins({users[0].address:10, users[1].address:20, users[3].address:50})
 	Scrooge.mine()
+	tx_num = 0
+	block_num = 1
+	print("[+] 10 coins are created for user[0]\n"+
+		"[+] 20 coins are created for user[1]\n"+
+		"[+] 50 coins are created for user[3]\n")
+	sleep(1)
+
+	while True:
+		sig_check = False
+		if block_num > 1:
+			show_bl = True
+			more_options = int(input("Enter 2 to show balance, 3 to show block, 4 to send an invalid signature, or 5 to continue: "))
+			if more_options == 2:
+				show_bl = False
+				what_balance = int(input("Enter the user number's balance you would like to see: ")) 
+				print("\n")
+				Scrooge.show_user_balance(users[what_balance].address,True)
+			elif more_options == 3:
+				what_block = int(input("Enter the block number you would like to see: "))
+				print("\n")
+				Scrooge.show_block(what_block)
+			elif more_options == 5:
+				pass
+			elif more_options == 4:
+				sig_check = True
+				show_bl = False
+				print("[+] Generating invalid public_key to send to next transaction...")
+				sleep(1)
+				print("Done! The next transaction will have an invalid signature")
+			if show_bl:
+				print("You are now building")
+				print("\nBlock number: ", block_num)
+				print("Transaction Number: ", tx_num,"\n")
+			else:
+				pass
+
+		sender = int(input("Enter the user number who will send a transaction: "))
+		if sender >=10 or sender<0:
+			sender = int(input("Please enter a user number between 0 and 9: "))
+		send_amt = int(input("Enter the coin amount being sent: "))
+		receiver = int(input("Enter the user number who will recieve this transaction: "))
+		if receiver >=10 or receiver<0:
+			receiver = int(input("Please enter a user number between 0 and 9: "))
+		remainer = int(input("Enter the coin amount the sender should have left: "))
+		print("\n")
+
+		sender_locations = Scrooge.get_user_tx_positions(users[sender].address)
+		pub_key = users[sender].public_key
+		if sig_check:
+			# Generate brand new keypair to invalidate transaction
+			priv_key, pub_key = keys.gen_keypair(curve.secp256k1)
+		input_tx = users[sender].send_tx({users[receiver].address:send_amt, users[sender].address:remainer},
+			sender_locations)
+		Scrooge.add_tx(input_tx, pub_key)
+
+		mine_tx = int(input("Enter 0 to mine, 1 to add another transaction to the block, or -1 to quit: "))
+		more_options = 0
+		print("\n")
+		if mine_tx == 0:
+			Scrooge.mine()
+			print("[+] Block number "+str(block_num)+" is added to the blockchain \n")
+			block_num+=1
+			tx_num = 0
+		elif mine_tx == 1:
+			tx_num+=1
+		elif mine_tx == -1:
+			print("Goodbye!")
+			break
+
+
 	
-	user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
-	first_tx = users[0].send_tx({users[1].address: 2, users[0].address:8}, user_0_tx_locations)
-	Scrooge.add_tx(first_tx, users[0].public_key)
-	Scrooge.mine()
-	#print(Scrooge.get_user_tx_positions(users[1].address))
+	# user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
+	# first_tx = users[0].send_tx({users[1].address: 2, users[0].address:8}, user_0_tx_locations)
+	# Scrooge.add_tx(first_tx, users[0].public_key)
+	# Scrooge.mine()
+	# #print(Scrooge.get_user_tx_positions(users[1].address))
 
-	second_tx = users[1].send_tx({users[0].address:20, users[1].address:2}, Scrooge.get_user_tx_positions(users[1].address))
-	user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
-	second_tx = users[0].send_tx({users[1].address: 2, users[0].address:6}, user_0_tx_locations)
-	Scrooge.add_tx(second_tx, users[0].public_key)
-	Scrooge.mine()
-	#print(Scrooge.get_user_tx_positions(users[1].address))
+	# second_tx = users[1].send_tx({users[0].address:20, users[1].address:2}, Scrooge.get_user_tx_positions(users[1].address))
+	# user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
+	# second_tx = users[0].send_tx({users[1].address: 2, users[0].address:6}, user_0_tx_locations)
+	# Scrooge.add_tx(second_tx, users[0].public_key)
+	# Scrooge.mine()
+	# #print(Scrooge.get_user_tx_positions(users[1].address))
 
-	user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
-	third_tx = users[0].send_tx({users[1].address: 2, users[0].address:4}, user_0_tx_locations)
-	Scrooge.add_tx(third_tx, users[0].public_key)
-	Scrooge.mine()
+	# user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
+	# third_tx = users[0].send_tx({users[1].address: 2, users[0].address:4}, user_0_tx_locations)
+	# Scrooge.add_tx(third_tx, users[0].public_key)
+	# Scrooge.mine()
 	# usr_1_tx_locations = Scrooge.get_user_tx_positions(users[1].address)
 	# print(usr_1_tx_locations)
 	# print(user_0_tx_locations)
@@ -422,7 +501,7 @@ def main():
 	# Scrooge.show_block(3)
 	# Scrooge.show_block(4)
 
-	Scrooge.show_user_balance(users[0].address,True)
+	#Scrooge.show_user_balance(users[0].address,True)
 
 	#Scrooge.get_user_tx_positions(users[1].address)
 	#Scrooge.get_user_tx_positions(users[0].address)
@@ -431,4 +510,8 @@ def main():
 
 
 if __name__ == '__main__':
-   main()
+	try:
+		main()
+	except KeyboardInterrupt:
+		print("\nGoodbye!")
+		sys.exit()
