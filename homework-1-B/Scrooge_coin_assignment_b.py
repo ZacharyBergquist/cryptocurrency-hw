@@ -2,11 +2,6 @@ import hashlib
 import json
 from fastecdsa import ecdsa, keys, curve, point
 
-"""
-double spend is still wrong
-find balance
-balance calculations wrong
-"""
 
 class ScroogeCoin(object):
 	def __init__(self):
