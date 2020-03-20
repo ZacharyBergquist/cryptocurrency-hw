@@ -15,7 +15,7 @@ class ScroogeCoin(object):
 						bytes(bin(self.public_key.y)[2:],'utf-8')]) # create the address using public key, and bitwise operation, may need hex(value).hexdigest()
 		self.chain = [] # list of all the blocks
 		self.current_transactions = [] # list of all the current transactions creating a block, the scrooge will keep up with the transactions
-		
+		self.senders = []
 
 
 	def KeyGen(self):
@@ -112,7 +112,7 @@ class ScroogeCoin(object):
 
 
 		# Check for equal value
-		balance = self.show_user_balance(tx['sender'])
+		balance = self.show_user_balance(tx['sender'], False)     #returns balance without printing
 		sent_amt = 0
 		remain_amt = 0
 		# get len of previous trans to index final balance
@@ -122,6 +122,23 @@ class ScroogeCoin(object):
 				remain_amt = amount
 			else:
 				sent_amt = amount
+
+		# save remaining amount and sender address to senders to check for double spend
+		remain_coins = {}
+		remain_coins['sender'] = tx['sender']
+		remain_coins['amount'] = remain_amt
+		self.senders.append(remain_coins)
+
+		# iterate through senders list and check for double spend
+		# if sender is present with the same remaining balance twice in the same
+		# block, it is a double spend 
+		dup_test = []
+		for i in self.senders:
+			if i in dup_test:
+				consumed_previous = True
+			else:
+				dup_test.append(i)
+
 
 		# print('Balance :', balance)
 		# print('last_location :', tx['locations'][num_trans-1]['amount'])
@@ -136,19 +153,6 @@ class ScroogeCoin(object):
 			is_funded = True
 
 
-		# Check for double spending by verifying user.address
-
-		# First generate new address using the public key param
-		test_addr = self.get_addr([bytes(bin(public_key.x)[2:],'utf-8'),
-			                       bytes(bin(public_key.y)[2:],'utf-8')])
-		# Compare this to the tx sender address
-		# If they are the same, this implies the transaction was never modified
-		# Therefore this is not a double spend
-
-		if test_addr != tx['sender']:
-			consumed_previous = True
-		else:
-			pass
 		test_hash = ['sender', 'locations', 'receivers']
 		temp_tx = {}
 		for item in test_hash:
@@ -198,6 +202,7 @@ class ScroogeCoin(object):
 
 		self.chain.append(block)
 		self.current_transactions = []
+		self.senders = []
 
 		return block
 
@@ -232,7 +237,7 @@ class ScroogeCoin(object):
 
 
 
-	def show_user_balance(self, address):
+	def show_user_balance(self, address, p):
 		"""
 		prints balance of address
 		:param address: User.address
@@ -270,7 +275,8 @@ class ScroogeCoin(object):
 				else:
 					pass
 				tx_index += 1
-		# print("The balance is : ", bal)
+		if p is True:
+			print("%s's balance is : %s"%(address, bal))
 		return bal
 				#print("index: ", tx_index)	
 		# print(bal_lst)
@@ -392,9 +398,9 @@ def main():
 	first_tx = users[0].send_tx({users[1].address: 2, users[0].address:8}, user_0_tx_locations)
 	Scrooge.add_tx(first_tx, users[0].public_key)
 	Scrooge.mine()
-	# print(Scrooge.get_user_tx_positions(users[1].address))
+	#print(Scrooge.get_user_tx_positions(users[1].address))
 
-	#second_tx = users[1].send_tx({users[0].address:20, users[1].address:2}, Scrooge.get_user_tx_positions(users[1].address))
+	second_tx = users[1].send_tx({users[0].address:20, users[1].address:2}, Scrooge.get_user_tx_positions(users[1].address))
 	user_0_tx_locations = Scrooge.get_user_tx_positions(users[0].address)
 	second_tx = users[0].send_tx({users[1].address: 2, users[0].address:6}, user_0_tx_locations)
 	Scrooge.add_tx(second_tx, users[0].public_key)
@@ -405,7 +411,7 @@ def main():
 	third_tx = users[0].send_tx({users[1].address: 2, users[0].address:4}, user_0_tx_locations)
 	Scrooge.add_tx(third_tx, users[0].public_key)
 	Scrooge.mine()
-	usr_1_tx_locations = Scrooge.get_user_tx_positions(users[1].address)
+	# usr_1_tx_locations = Scrooge.get_user_tx_positions(users[1].address)
 	# print(usr_1_tx_locations)
 	# print(user_0_tx_locations)
 	# print(Scrooge.get_user_tx_positions(users[1].address))
@@ -415,13 +421,13 @@ def main():
 	# Scrooge.mine()
 
 
-	Scrooge.show_block(0)
-	Scrooge.show_block(1)
-	Scrooge.show_block(2)
-	Scrooge.show_block(3)
-	#Scrooge.show_block(4)
+	# Scrooge.show_block(0)
+	# Scrooge.show_block(1)
+	# Scrooge.show_block(2)
+	# Scrooge.show_block(3)
+	# Scrooge.show_block(4)
 
-	print("User[0]'s balance : ", Scrooge.show_user_balance(users[0].address))
+	Scrooge.show_user_balance(users[0].address,True)
 
 	#Scrooge.get_user_tx_positions(users[1].address)
 	#Scrooge.get_user_tx_positions(users[0].address)

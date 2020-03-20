@@ -89,15 +89,21 @@ if __name__ == '__main__':
 	else:
 		print('Consumed False')
 	"""
-	test_hash = '507363fe1a5d39545ef4a69ebeacbe6498fc789f0e09ac659768a3fae17ec50e'
-	(priv, pub) = keys.gen_keypair(curve.secp256k1)
-	print(priv)
-	print(pub)
+	# test_hash = '507363fe1a5d39545ef4a69ebeacbe6498fc789f0e09ac659768a3fae17ec50e'
+	# (priv, pub) = keys.gen_keypair(curve.secp256k1)
+	# print(priv)
+	# print(pub)
 
 
-	test_1 = sign(priv,test_hash)
-	sleep(1)
-	test_2 = sign(priv, test_hash)
-	print(test_1, '\n', test_2)
+	# test_1 = sign(priv,test_hash)
+	# sleep(1)
+	# test_2 = sign(priv, test_hash)
+	# print(test_1, '\n', test_2)
 
-
+	senders = [{'sender': '79793f5077d3ed48006b78d248728463a54e138496d376caad89dec13d544da3', 'amount': 8},{'sender': '79793f5077d3ed48006b78d248728463a54e138496d376caad89dec13d544da3', 'amount': 8}]
+	r = []
+	for i in senders:
+		if i in r:
+			print("double spend!!!")
+		else:
+			r.append(i)
